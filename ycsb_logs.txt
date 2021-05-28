@@ -1,0 +1,88 @@
+ycsb-0.17.0
+
+
+Customized workload file:
+-------------------------
+
+[root@RHEL7U9-AW io-tool-demo]# docker-compose exec -T sysb cat /root/ycsb/workloads/Read-Write-Update-cas
+recordcount=1000
+operationcount=1000
+workload=site.ycsb.workloads.CoreWorkload
+readallfields=true
+readproportion=0.1
+updateproportion=0.1
+scanproportion=0
+insertproportion=0.7
+dataintegrity=false
+readmodifywriteproportion=0.1
+requestdistribution=zipfian
+maxscanlength=100
+scanlengthdistribution=uniform
+
+
+Running YCSB load and run phase:
+--------------------------------
+
+# /usr/bin/docker-compose exec -T sysb /root/ycsb/bin/ycsb load cassandra-cql -s -P /root/ycsb/workloads/Read-Write-Update-cas -p recordcount=50000000 -threads 1 -p hosts="cas-1,cas-2,cas-3" -p fieldcount=20 -p status.interval=1
+
+Note: 
+
+load completed without any error or issue:
+
+2021-05-27 19:49:15:344 15542 sec: 49994869 operations; 3064 current ops/sec; est completion in 2 second [INSERT: Count=3064, Max=29631, Min=185, Avg=323.75, 90=368, 99=578, 99.9=768, 99.99=29631]
+2021-05-27 19:49:16:368 15543 sec: 49997934 operations; 3065 current ops/sec; est completion in 1 second [INSERT: Count=3149, Max=25423, Min=171, Avg=322.5, 90=398, 99=646, 99.9=778, 99.99=25423]
+2021-05-27 19:49:17:344 15544 sec: 50000000 operations; 2066 current ops/sec; [INSERT: Count=1982, Max=1902, Min=184, Avg=301.21, 90=377, 99=598, 99.9=733, 99.99=1902]
+2021-05-27 19:49:18:345 15545 sec: 50000000 operations; 0 current ops/sec; [INSERT: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 19:49:19:344 15546 sec: 50000000 operations; 0 current ops/sec; [INSERT: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 19:49:20:154 15546 sec: 50000000 operations; 0 current ops/sec; [CLEANUP: Count=1, Max=3092479, Min=3090432, Avg=3091456, 90=3092479, 99=3092479, 99.9=3092479, 99.99=3092479] [INSERT: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+[OVERALL], RunTime(ms), 15546812
+[OVERALL], Throughput(ops/sec), 3216.0934344610328
+[TOTAL_GCS_G1_Young_Generation], Count, 2000
+[TOTAL_GC_TIME_G1_Young_Generation], Time(ms), 8744
+[TOTAL_GC_TIME_%_G1_Young_Generation], Time(%), 0.05624304198185454
+[TOTAL_GCS_G1_Old_Generation], Count, 0
+[TOTAL_GC_TIME_G1_Old_Generation], Time(ms), 0
+[TOTAL_GC_TIME_%_G1_Old_Generation], Time(%), 0.0
+[TOTAL_GCs], Count, 2000
+[TOTAL_GC_TIME], Time(ms), 8744
+[TOTAL_GC_TIME_%], Time(%), 0.05624304198185454
+[CLEANUP], Operations, 1
+[CLEANUP], AverageLatency(us), 3091456.0
+[CLEANUP], MinLatency(us), 3090432
+[CLEANUP], MaxLatency(us), 3092479
+[CLEANUP], 95thPercentileLatency(us), 3092479
+[CLEANUP], 99thPercentileLatency(us), 3092479
+[INSERT], Operations, 50000000
+[INSERT], AverageLatency(us), 308.47868414
+[INSERT], MinLatency(us), 149
+[INSERT], MaxLatency(us), 2392063
+[INSERT], 95thPercentileLatency(us), 429
+[INSERT], 99thPercentileLatency(us), 575
+[INSERT], Return=OK, 50000000
+
+
+
+# /usr/bin/docker-compose exec -T sysb /root/ycsb/bin/ycsb run cassandra-cql -s -P /root/ycsb/workloads/Read-Write-Update-cas -p recordcount=50000000 -p operationcount=500000000 -threads 1 -p hosts="cas-1,cas-2,cas-3" -p fieldcount=20 -p maxexecutiontime=86400 -p status.interval=1
+
+Note: 
+
+After running load for 2.5 hours (on 9212 second) observing "READ-FAILED" error, i am not sure why this is happening. I am able to repro it consistently.
+
+
+.
+.
+.
+2021-05-27 22:22:53:019 9208 sec: 8625003 operations; 661 current ops/sec; est completion in 6 days 1 hour [READ: Count=133, Max=89599, Min=311, Avg=5145.44, 90=10551, 99=78783, 99.9=89599, 99.99=89599] [READ-MODIFY-WRITE: Count=69, Max=26751, Min=707, Avg=4425.57, 90=11583, 99=18271, 99.9=26751, 99.99=26751] [INSERT: Count=450, Max=1432, Min=216, Avg=537.25, 90=818, 99=1128, 99.9=1432, 99.99=1432] [UPDATE: Count=145, Max=1471, Min=184, Avg=472.85, 90=733, 99=1284, 99.9=1471, 99.99=1471]
+2021-05-27 22:22:54:019 9209 sec: 8625668 operations; 665 current ops/sec; est completion in 6 days 1 hour [READ: Count=127, Max=66367, Min=334, Avg=4931.35, 90=12767, 99=36127, 99.9=66367, 99.99=66367] [READ-MODIFY-WRITE: Count=64, Max=36543, Min=709, Avg=4670.2, 90=13511, 99=34143, 99.9=36543, 99.99=36543] [INSERT: Count=458, Max=2303, Min=237, Avg=589.22, 90=869, 99=1195, 99.9=2303, 99.99=2303] [UPDATE: Count=144, Max=1190, Min=218, Avg=501.5, 90=759, 99=1186, 99.9=1190, 99.99=1190]
+2021-05-27 22:22:55:019 9210 sec: 8626279 operations; 611 current ops/sec; est completion in 6 days 1 hour [READ: Count=110, Max=98495, Min=399, Avg=6190.99, 90=12063, 99=38431, 99.9=98495, 99.99=98495] [READ-MODIFY-WRITE: Count=55, Max=100095, Min=692, Avg=8793.56, 90=15983, 99=39999, 99.9=100095, 99.99=100095] [INSERT: Count=441, Max=1659, Min=241, Avg=624.24, 90=969, 99=1327, 99.9=1659, 99.99=1659] [UPDATE: Count=119, Max=1395, Min=187, Avg=571.55, 90=909, 99=1310, 99.9=1395, 99.99=1395]
+2021-05-27 22:22:56:019 9211 sec: 8626842 operations; 563 current ops/sec; est completion in 6 days 1 hour [READ: Count=118, Max=97215, Min=318, Avg=5499.74, 90=10463, 99=93055, 99.9=97215, 99.99=97215] [READ-MODIFY-WRITE: Count=45, Max=98495, Min=742, Avg=5810.96, 90=8807, 99=98495, 99.9=98495, 99.99=98495] [INSERT: Count=385, Max=1252, Min=239, Avg=616.27, 90=924, 99=1163, 99.9=1252, 99.99=1252] [UPDATE: Count=101, Max=1327, Min=195, Avg=580.12, 90=904, 99=1097, 99.9=1327, 99.99=1327]
+2021-05-27 22:22:57:019 9212 sec: 8627010 operations; 168 current ops/sec; est completion in 6 days 1 hour [READ: Count=33, Max=90367, Min=732, Avg=12685.67, 90=35679, 99=90367, 99.9=90367, 99.99=90367] [READ-MODIFY-WRITE: Count=18, Max=93183, Min=1121, Avg=17020.33, 90=36895, 99=93183, 99.9=93183, 99.99=93183] [INSERT: Count=120, Max=109951, Min=325, Avg=2155.85, 90=3283, 99=7943, 99.9=109951, 99.99=109951] [UPDATE: Count=35, Max=11567, Min=302, Avg=1142.29, 90=2081, 99=11567, 99.9=11567, 99.99=11567] [READ-FAILED: Count=1, Max=23615, Min=23600, Avg=23608, 90=23615, 99=23615, 99.9=23615, 99.99=23615]
+2021-05-27 22:22:58:019 9213 sec: 8627523 operations; 513 current ops/sec; est completion in 6 days 1 hour [READ: Count=87, Max=97151, Min=417, Avg=8968.98, 90=14639, 99=67967, 99.9=97151, 99.99=97151] [READ-MODIFY-WRITE: Count=44, Max=62303, Min=654, Avg=7554.91, 90=14047, 99=62303, 99.9=62303, 99.99=62303] [INSERT: Count=378, Max=1220, Min=240, Avg=467.85, 90=686, 99=1030, 99.9=1220, 99.99=1220] [UPDATE: Count=97, Max=1017, Min=217, Avg=411.89, 90=649, 99=861, 99.9=1017, 99.99=1017] [READ-FAILED: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 22:22:59:019 9214 sec: 8628119 operations; 596 current ops/sec; est completion in 6 days 1 hour [READ: Count=115, Max=112063, Min=334, Avg=6460.7, 90=12127, 99=90943, 99.9=112063, 99.99=112063] [READ-MODIFY-WRITE: Count=58, Max=91711, Min=788, Avg=6967.95, 90=13015, 99=60575, 99.9=91711, 99.99=91711] [INSERT: Count=423, Max=1359, Min=234, Avg=473.31, 90=708, 99=895, 99.9=1359, 99.99=1359] [UPDATE: Count=108, Max=1033, Min=210, Avg=429.63, 90=637, 99=1031, 99.9=1033, 99.99=1033] [READ-FAILED: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 22:23:00:019 9215 sec: 8628679 operations; 560 current ops/sec; est completion in 6 days 1 hour [READ: Count=117, Max=115071, Min=327, Avg=6498.37, 90=16143, 99=64863, 99.9=115071, 99.99=115071] [READ-MODIFY-WRITE: Count=66, Max=65599, Min=607, Avg=6775.21, 90=17151, 99=48191, 99.9=65599, 99.99=65599] [INSERT: Count=391, Max=1137, Min=218, Avg=466.95, 90=711, 99=1021, 99.9=1137, 99.99=1137] [UPDATE: Count=118, Max=1338, Min=191, Avg=438.92, 90=674, 99=1012, 99.9=1338, 99.99=1338] [READ-FAILED: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 22:23:01:019 9216 sec: 8629411 operations; 732 current ops/sec; est completion in 6 days 1 hour [READ: Count=139, Max=94143, Min=390, Avg=5108.03, 90=10015, 99=59999, 99.9=94143, 99.99=94143] [READ-MODIFY-WRITE: Count=71, Max=95039, Min=597, Avg=5881.15, 90=8959, 99=41823, 99.9=95039, 99.99=95039] [INSERT: Count=524, Max=1256, Min=200, Avg=443.07, 90=639, 99=1023, 99.9=1218, 99.99=1256] [UPDATE: Count=142, Max=988, Min=174, Avg=404.29, 90=659, 99=926, 99.9=988, 99.99=988] [READ-FAILED: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+2021-05-27 22:23:02:019 9217 sec: 8629929 operations; 518 current ops/sec; est completion in 6 days 1 hour [READ: Count=116, Max=103615, Min=362, Avg=6558.6, 90=12535, 99=89599, 99.9=103615, 99.99=103615] [READ-MODIFY-WRITE: Count=55, Max=103999, Min=619, Avg=7671.18, 90=15127, 99=19727, 99.9=103999, 99.99=103999] [INSERT: Count=344, Max=960, Min=233, Avg=481.37, 90=683, 99=892, 99.9=960, 99.99=960] [UPDATE: Count=111, Max=818, Min=189, Avg=402.95, 90=596, 99=779, 99.9=818, 99.99=818] [READ-FAILED: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0]
+.
+.
+.
+
